@@ -1,0 +1,4 @@
+composer.lock
+/config/config.yml
+/log/*
+/vendor

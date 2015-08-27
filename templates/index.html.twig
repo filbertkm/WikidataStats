@@ -1,0 +1,31 @@
+{% extends 'layout.html.twig' %}
+
+{% block body %}
+<h1>Usage tracking statistics</h1>
+<br/>
+
+<table class="table table-striped text-left">
+<tr>
+  <th>Site</th>
+  <th>Total</th>
+  <th>Sitelinks</th>
+  <th>Labels</th>
+  <th>Title</th>
+  <th>Other</th>
+  <th>Any</th>
+</tr>
+
+{% for stat in stats %}
+<tr>
+  <td>{{ stat.site_id }}</td>
+  <td>{{ stat.total ?: 0 }} </td>
+  <td>{{ stat.sitelinks ?: 0 }}</td>
+  <td>{{ stat.labels ?: 0 }}</td>
+  <td>{{ stat.title ?: 0 }}</td>
+  <td>{{ stat.other ?: 0 }}</td>
+  <td>{{ stat.allusage ?: 0 }}</td>
+</tr>
+{% endfor %}
+</table>
+
+{% endblock %}
