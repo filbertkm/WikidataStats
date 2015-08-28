@@ -26,6 +26,17 @@
   <td>{{ stat.allusage ?: 0 }}</td>
 </tr>
 {% endfor %}
+
+<tr class='info'>
+  <td>Total usage by aspect</td>
+  <td>{{ totals.total }}</td>
+  <td>{{ totals.S }}</td>
+  <td>{{ totals.L }}</td>
+  <td>{{ totals.T }}</td>
+  <td>{{ totals.O }}</td>
+  <td>{{ totals.X }}</td>
+</tr>
+
 </table>
 
 {% endblock %}

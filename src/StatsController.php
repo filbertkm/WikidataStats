@@ -10,6 +10,16 @@ class StatsController {
 	public function indexAction( Request $request, Application $app ) {
 		$statsDb = $app['dbs']['wikidatastats'];
 
+		return $app['twig']->render(
+			'index.html.twig',
+			array(
+				'stats' => $this->getStats( $statsDb ),
+				'totals' => $this->getAspectTotals( $statsDb )
+			)
+		);
+	}
+
+	private function getStats( $statsDb ) {
 		$sql = 'SELECT DISTINCT(u.site_id) as site_id, total.count as total, sitelinks.count as sitelinks, labels.count as labels, title.count as title, other.count as other, allusage.count as allusage '
 			. 'FROM stats_usagetracking u '
 			. 'LEFT JOIN (SELECT site_id, count FROM stats_usagetracking WHERE aspect = "S") as sitelinks on (u.site_id = sitelinks.site_id) '
@@ -20,11 +30,28 @@ class StatsController {
 			. 'LEFT JOIN (SELECT site_id, count FROM stats_usagetracking WHERE aspect = "X") as allusage on (u.site_id = allusage.site_id) '
 			. 'ORDER BY site_id';
 
-		$stats = $statsDb->fetchAll( $sql );
+		return $statsDb->fetchAll( $sql );
+	}
 
-		return $app['twig']->render(
-			'index.html.twig', array( 'stats' => $stats )
-		);
+	private function getAspectTotals( $statsDb ) {
+		$sql = 'SELECT aspect, sum(count) as sum '
+			. 'FROM stats_usagetracking '
+			. 'WHERE aspect NOT LIKE "L%" '
+			. 'GROUP BY aspect '
+			. 'UNION ( '
+				. 'SELECT "L", sum(count) as sum '
+				. 'FROM stats_usagetracking '
+				. 'WHERE aspect LIKE "L%" '
+			. ')';
+
+		$totals = array();
+
+		foreach( $statsDb->fetchAll( $sql ) as $row ) {
+			$aspect = $row['aspect'];
+			$totals[$aspect] = $row['sum'];
+		}
+
+		return $totals;
 	}
 
 }
