@@ -27,6 +27,8 @@ class WebApp {
 	private function initRoutes() {
 		$app = $this->app;
 
+		$this->app->get( '/usage-tracking/{date}', 'WikidataStats\StatsController::dateAction' );
+		$this->app->get( '/usage-tracking', 'WikidataStats\StatsController::indexAction' );
 		$this->app->get( '/', 'WikidataStats\StatsController::indexAction' );
 	}
 

@@ -8,40 +8,61 @@ use Symfony\Component\HttpFoundation\Request;
 class StatsController {
 
 	public function indexAction( Request $request, Application $app ) {
+		$date = '2015-08-27';
+
+		return $this->dateAction( $request, $app, $date );
+	}
+
+	public function dateAction( Request $request, Application $app, $date ) {
+		if ( $date !== '2015-08-27' && $date !== '2015-10-06' ) {
+			$date = '2015-01-01';
+		}
+
 		$statsDb = $app['dbs']['wikidatastats'];
 
 		return $app['twig']->render(
 			'index.html.twig',
 			array(
-				'stats' => $this->getStats( $statsDb ),
-				'totals' => $this->getAspectTotals( $statsDb )
+				'stats' => $this->getStats( $statsDb, $date ),
+				'totals' => $this->getAspectTotals( $statsDb, $date )
 			)
 		);
 	}
 
-	private function getStats( $statsDb ) {
+	private function getStats( $statsDb, $date ) {
 		$sql = 'SELECT DISTINCT(u.site_id) as site_id, total.count as total, sitelinks.count as sitelinks, labels.count as labels, title.count as title, other.count as other, allusage.count as allusage '
 			. 'FROM stats_usagetracking u '
-			. 'LEFT JOIN (SELECT site_id, count FROM stats_usagetracking WHERE aspect = "S") as sitelinks on (u.site_id = sitelinks.site_id) '
-			. 'LEFT JOIN (SELECT site_id, SUM(count) as count FROM stats_usagetracking where aspect LIKE "L%" group by site_id) as labels on (u.site_id = labels.site_id) '
-			. 'LEFT JOIN (SELECT site_id, count FROM stats_usagetracking WHERE aspect = "total") as total on (u.site_id = total.site_id) '
-			. 'LEFT JOIN (SELECT site_id, count FROM stats_usagetracking WHERE aspect = "T") as title on (u.site_id = title.site_id) '
-			. 'LEFT JOIN (SELECT site_id, count FROM stats_usagetracking WHERE aspect = "O") as other on (u.site_id = other.site_id) '
-			. 'LEFT JOIN (SELECT site_id, count FROM stats_usagetracking WHERE aspect = "X") as allusage on (u.site_id = allusage.site_id) '
+			. 'LEFT JOIN (' . $this->getAspectSelectSQL( 'S', $date ) . ') as sitelinks on (u.site_id = sitelinks.site_id) '
+			. 'LEFT JOIN (SELECT site_id, SUM(count) as count FROM stats_usagetracking '
+					. 'where aspect LIKE "L%" '
+					. 'AND date(FROM_UNIXTIME(timestamp)) = "' . $date . '" group by site_id) '
+					. 'as labels on (u.site_id = labels.site_id) '
+			. 'LEFT JOIN (' . $this->getAspectSelectSQL( 'total', $date ) . ') as total on (u.site_id = total.site_id) '
+			. 'LEFT JOIN (' . $this->getAspectSelectSQL( 'T', $date ) . ') as title on (u.site_id = title.site_id) '
+			. 'LEFT JOIN (' . $this->getAspectSelectSQL( 'O', $date ) . ') as other on (u.site_id = other.site_id) '
+			. 'LEFT JOIN (' . $this->getAspectSelectSQL( 'X', $date ) . ') as allusage on (u.site_id = allusage.site_id) '
 			. 'ORDER BY site_id';
 
 		return $statsDb->fetchAll( $sql );
 	}
 
-	private function getAspectTotals( $statsDb ) {
+	private function getAspectSelectSQL( $aspect, $date ) {
+		return 'SELECT site_id, count FROM stats_usagetracking '
+			. "WHERE aspect = '$aspect' "
+			. " AND date(FROM_UNIXTIME(timestamp)) = '$date' ";
+	}
+
+	private function getAspectTotals( $statsDb, $date ) {
 		$sql = 'SELECT aspect, sum(count) as sum '
 			. 'FROM stats_usagetracking '
 			. 'WHERE aspect NOT LIKE "L%" '
+			. " AND DATE(FROM_UNIXTIME(timestamp)) = '$date' "
 			. 'GROUP BY aspect '
 			. 'UNION ( '
 				. 'SELECT "L", sum(count) as sum '
 				. 'FROM stats_usagetracking '
 				. 'WHERE aspect LIKE "L%" '
+				. " AND DATE(FROM_UNIXTIME(timestamp)) = '$date' "
 			. ')';
 
 		$totals = array();

@@ -21,14 +21,13 @@ class StatsUpdateCommand extends Command {
 		$app = $this->getSilexApplication();
 
 		$statsDb = $app['dbs']['wikidatastats'];
-		$this->initDatabase( $statsDb );
-
-		// @todo keep snapshots of stats over time
-		$statsDb->query( 'TRUNCATE TABLE stats_usagetracking' );
+//		$this->initDatabase( $statsDb );
 
 		foreach( $app['wikis'] as $wiki ) {
-			$stats = $this->updateStats( $app, $wiki );
-			$output->writeln( "Updating stats for $wiki" );
+			if ( substr( $wiki, 0, 1 ) === 'z' && $wiki !== 'zhwiki' ) {
+				$stats = $this->updateStats( $app, $wiki );
+				$output->writeln( "Updating stats for $wiki" );
+			}
 		}
 	}
 
@@ -52,20 +51,41 @@ class StatsUpdateCommand extends Command {
 		return $stats;
 	}
 
+	private function hasStatsForDate( $app, $wiki, $aspect ) {
+		$db = $app['dbs']['wikidatastats'];
+
+		$sql = 'SELECT site_id from stats_usagetracking '
+			. "WHERE site_id = '$wiki' and aspect = '$aspect'"
+			. " AND DATE(FROM_UNIXTIME(timestamp)) = '2015-10-06' "
+			. " LIMIT 1";
+
+		foreach( $db->fetchAll( $sql ) as $row ) {
+			return true;
+		}
+
+		return false;
+	}
+
 	private function updateStats( $app, $wiki ) {
 		$stats = $this->getStats( $app, $wiki );
 
 		$statsDb = $app['dbs']['wikidatastats'];
+		$time = time();
 
 		foreach( $stats as $aspect => $count ) {
-			$statsDb->insert(
-				'stats_usagetracking',
-				array(
+			if ( !$this->hasStatsForDate( $app, $wiki, $aspect ) ) {
+				$data = array(
 					'site_id' => $wiki,
 					'aspect' => $aspect,
-					'count' => $count
-				)
-			);
+					'count' => $count,
+					'timestamp' => $time
+				);
+
+				$statsDb->insert(
+					'stats_usagetracking',
+					$data
+				);
+			}
 		}
 
 		return $stats;
