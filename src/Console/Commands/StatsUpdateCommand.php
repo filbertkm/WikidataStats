@@ -50,10 +50,11 @@ class StatsUpdateCommand extends Command {
 
 	private function hasStatsForDate( $app, $wiki, $aspect ) {
 		$db = $app['dbs']['wikidatastats'];
+		$date = date( 'Y-m-d' );
 
 		$sql = 'SELECT site_id from stats_usagetracking '
 			. "WHERE site_id = '$wiki' and aspect = '$aspect'"
-			. " AND DATE(FROM_UNIXTIME(timestamp)) = '2015-10-06' "
+			. " AND DATE(FROM_UNIXTIME(timestamp)) = '$date' "
 			. " LIMIT 1";
 
 		foreach( $db->fetchAll( $sql ) as $row ) {

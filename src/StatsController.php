@@ -14,7 +14,7 @@ class StatsController {
 	}
 
 	public function dateAction( Request $request, Application $app, $date ) {
-		if ( $date !== '2015-08-27' && $date !== '2015-10-06' ) {
+		if ( !$this->validateDate( $date ) ) {
 			$date = '2015-01-01';
 		}
 
@@ -27,6 +27,14 @@ class StatsController {
 				'totals' => $this->getAspectTotals( $statsDb, $date )
 			)
 		);
+	}
+
+	private function validateDate( $date  ) {
+		if ( preg_match( "/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/", $date, $parts ) ) {
+			return checkdate( $parts[2], $parts[3], $parts[1] );
+		}
+
+		return false;
 	}
 
 	private function getStats( $statsDb, $date ) {
