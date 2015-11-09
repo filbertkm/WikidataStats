@@ -6,6 +6,7 @@ class CommandRegistry {
 
 	public function getCommands() {
 		$classNames = array(
+			'\WikidataStats\Console\Commands\InitDBCommand',
 			'\WikidataStats\Console\Commands\StatsCommand',
 			'\WikidataStats\Console\Commands\StatsUpdateCommand'
 		);

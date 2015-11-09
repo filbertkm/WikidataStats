@@ -21,13 +21,10 @@ class StatsUpdateCommand extends Command {
 		$app = $this->getSilexApplication();
 
 		$statsDb = $app['dbs']['wikidatastats'];
-//		$this->initDatabase( $statsDb );
 
 		foreach( $app['wikis'] as $wiki ) {
-			if ( substr( $wiki, 0, 1 ) === 'z' && $wiki !== 'zhwiki' ) {
-				$stats = $this->updateStats( $app, $wiki );
-				$output->writeln( "Updating stats for $wiki" );
-			}
+			$stats = $this->updateStats( $app, $wiki );
+			$output->writeln( "Updating stats for $wiki" );
 		}
 	}
 
@@ -89,31 +86,6 @@ class StatsUpdateCommand extends Command {
 		}
 
 		return $stats;
-	}
-
-	private function initDatabase( $db ) {
-		$schemaManager = $db->getSchemaManager();
-		$tables = $schemaManager->listTables();
-
-		if ( $tables === array() ) {
-			$schema = new Schema();
-
-			$table = $schema->createTable( 'stats_usagetracking' );
-
-			$table->addColumn( 'id', 'integer', array( 'unsigned' => true, 'autoincrement' => true ) );
-			$table->addColumn( 'site_id', 'string', array( 'length' => 64 ) );
-			$table->addColumn( 'aspect', 'string', array( 'length' => 16 ) );
-			$table->addColumn( 'count', 'integer' );
-
-			$table->setPrimaryKey( array( 'id' ) );
-			$table->addIndex( array( 'site_id' ) );
-
-			$sqlCommands = $schema->toSql( $db->getDatabasePlatform() );
-
-			foreach( $sqlCommands as $command ) {
-				$db->query( $command );
-			}
-		}
 	}
 
 }
